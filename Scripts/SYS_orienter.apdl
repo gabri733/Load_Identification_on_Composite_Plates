@@ -1,0 +1,190 @@
+! MACRO PER ORIENTAMENTO COERENTE CON CALCOLO ANGOLI EULERO (ZYX)
+/PREP7
+
+*GET, total_elems, ELEM, 0, COUNT
+baseID = 1000
+tol = 1e-10
+rad2deg = 180.0 / 3.141592653589793
+asin_clamp = 1.0
+
+*DO, elem_id, 1, total_elems
+
+  ! --- 1) Ottieni i primi 3 nodi dell'elemento (adattare se elemento ha più nodi)
+  *GET, n1, ELEM, elem_id, NODE, 1
+  *GET, n2, ELEM, elem_id, NODE, 2
+  *GET, n3, ELEM, elem_id, NODE, 3
+
+  ! --- 2) Coordinate nodi
+  *GET, n1x, NODE, n1, LOC, X
+  *GET, n1y, NODE, n1, LOC, Y
+  *GET, n1z, NODE, n1, LOC, Z
+
+  *GET, n2x, NODE, n2, LOC, X
+  *GET, n2y, NODE, n2, LOC, Y
+  *GET, n2z, NODE, n2, LOC, Z
+
+  *GET, n3x, NODE, n3, LOC, X
+  *GET, n3y, NODE, n3, LOC, Y
+  *GET, n3z, NODE, n3, LOC, Z
+
+  ! --- 3) Calcola normale Z = (n2-n1) x (n3-n1)
+  v12_x = n2x - n1x
+  v12_y = n2y - n1y
+  v12_z = n2z - n1z
+
+  v13_x = n3x - n1x
+  v13_y = n3y - n1y
+  v13_z = n3z - n1z
+
+  z_x = v12_y * v13_z - v12_z * v13_y
+  z_y = v12_z * v13_x - v12_x * v13_z
+  z_z = v12_x * v13_y - v12_y * v13_x
+
+  z_norm = SQRT(z_x*z_x + z_y*z_y + z_z*z_z)
+  *IF, z_norm, LT, tol, THEN
+    *MSG,,"Elem ",elem_id,": normale quasi nulla -> salto."
+    *GOTO, next_elem
+  *ENDIF
+  z_x = z_x / z_norm
+  z_y = z_y / z_norm
+  z_z = z_z / z_norm
+
+  ! --- 4) Centroide (origine del CSYS)
+  xc = (n1x + n2x + n3x) / 3.0
+  yc = (n1y + n2y + n3y) / 3.0
+  zc = (n1z + n2z + n3z) / 3.0
+
+  ! --- 5) Costruisci asse X come proiezione di Xglob sul piano tangente
+  ig_x = 1.0
+  ig_y = 0.0
+  ig_z = 0.0
+
+  dot_xz = z_x*ig_x + z_y*ig_y + z_z*ig_z
+
+  x_x = ig_x - dot_xz * z_x
+  x_y = ig_y - dot_xz * z_y
+  x_z = ig_z - dot_xz * z_z
+
+  x_norm = SQRT(x_x*x_x + x_y*x_y + x_z*x_z)
+
+  ! --- 6) Se degenerato (z quasi parallelo a Xglob) usa Yglob
+  *IF, x_norm, LT, 1e-8, THEN
+    jg_x = 0.0
+    jg_y = 1.0
+    jg_z = 0.0
+    dot_jz = z_x*jg_x + z_y*jg_y + z_z*jg_z
+
+    x_x = jg_x - dot_jz * z_x
+    x_y = jg_y - dot_jz * z_y
+    x_z = jg_z - dot_jz * z_z
+
+    x_norm = SQRT(x_x*x_x + x_y*x_y + x_z*x_z)
+
+    *IF, x_norm, LT, 1e-8, THEN
+      ! fallback: costruisco un vettore qualsiasi ortogonale a z
+      *IF, ABS(z_x), GT, ABS(z_y), THEN
+        x_x = -z_z
+        x_y = 0.0
+        x_z = z_x
+      *ELSE
+        x_x = 0.0
+        x_y = z_z
+        x_z = -z_y
+      *ENDIF
+      x_norm = SQRT(x_x*x_x + x_y*x_y + x_z*x_z)
+    *ENDIF
+  *ENDIF
+
+  ! --- 7) Normalizza X
+  x_x = x_x / x_norm
+  x_y = x_y / x_norm
+  x_z = x_z / x_norm
+
+  ! --- 8) Forza proiezione non-negativa su Xglob
+  dot_x_ig = x_x*ig_x + x_y*ig_y + x_z*ig_z
+  *IF, dot_x_ig, LT, 0.0, THEN
+    x_x = -x_x
+    x_y = -x_y
+    x_z = -x_z
+  *ENDIF
+
+  ! --- 9) Calcola Y = Z x X (triade destrorsa)
+  y_x = z_y * x_z - z_z * x_y
+  y_y = z_z * x_x - z_x * x_z
+  y_z = z_x * x_y - z_y * x_x
+
+  y_norm = SQRT(y_x*y_x + y_y*y_y + y_z*y_z)
+  *IF, y_norm, LT, tol, THEN
+    *MSG,,"Elem ",elem_id,": y_norm quasi nulla -> salto."
+    *GOTO, next_elem
+  *ENDIF
+  y_x = y_x / y_norm
+  y_y = y_y / y_norm
+  y_z = y_z / y_norm
+
+  ! --- 10) Opzionale: allinea verso Yglob per coerenza di segno
+  jg_x = 0.0
+  jg_y = 1.0
+  jg_z = 0.0
+  dot_y_jg = y_x*jg_x + y_y*jg_y + y_z*jg_z
+  *IF, dot_y_jg, LT, 0.0, THEN
+    y_x = -y_x
+    y_y = -y_y
+    y_z = -y_z
+    x_x = -x_x
+    x_y = -x_y
+    x_z = -x_z
+  *ENDIF
+
+  ! --- 11) Costruisci matrice R (colonne = X_loc, Y_loc, Z_loc)
+  R11 = x_x   
+  R12 = y_x    
+  R13 = z_x
+  R21 = x_y    
+  R22 = y_y    
+  R23 = z_y
+  R31 = x_z    
+  R32 = y_z   
+  R33 = z_z
+
+  ! --- 12) Estrai angoli Euler Z-X-Y (intrinseci)
+  ! beta = asin(-R23)  => R23 = z_y
+  tmp = -R23
+  *IF, tmp, GT, 1.0, THEN
+	tmp = 1.0 
+  *ENDIF
+  *IF, tmp, LT, -1.0, THEN
+	 tmp = -1.0
+  *ENDIF
+  beta_rad = ASIN( tmp )
+
+  cb = COS(beta_rad)
+  *IF, ABS(cb), LT, 1e-8, THEN
+    ! singolarità (gimbal lock): scelta convenzionale alpha=0
+    alpha_rad = 0.0
+    ! gamma -> usare elemento alternativo: gamma = atan2(R13, R33)
+    gamma_rad = ATAN2( R13, R33 )
+  *ELSE
+    alpha_rad = ATAN2( R21, R22 )   ! alpha = atan2(R21, R22) -> atan2(x_y, y_y)
+    gamma_rad = ATAN2( R13, R33 )   ! gamma = atan2(R13, R33) -> atan2(z_x, z_z)
+  *ENDIF
+
+  alpha_deg = alpha_rad * rad2deg
+  beta_deg  = beta_rad  * rad2deg
+  gamma_deg = gamma_rad * rad2deg
+
+  ! --- 13) Definisci LOCAL (THXY=alpha, THYZ=beta, THZX=gamma) con origine al centroide
+  LOCAL, baseID + elem_id, 0, xc, yc, zc, alpha_deg, beta_deg, gamma_deg
+
+  ! --- 14) Assegna ESYS all'elemento selezionando l'elemento
+  ESEL, S, ELEM, , elem_id
+  ESYS, baseID + elem_id
+  ESEL, ALL
+  CSYS,0
+
+*ENDDO
+
+! Ripristina selezione completa
+ESEL, ALL
+/PSYMB, CSYS,0
+EPLOT,ALL

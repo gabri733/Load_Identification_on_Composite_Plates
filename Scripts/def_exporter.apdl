@@ -1,0 +1,75 @@
+/POST1
+SET,FIRST
+
+! ===================== CONFIG =====================
+! Quanti FBG hai (qui 8)
+*SET, NFBG, 8
+
+! Se vuoi limitarti ai primi 20 set (come nel tuo esempio), lascia 20.
+! Se vuoi tutti i set disponibili, metti MAXSET=0 e usa NSET.
+*SET, MAXSET, 120
+
+! Nome output
+! ==================================================
+
+! Numero set disponibili nel file
+*GET, NSET, ACTIVE, 0, SET, NSET
+
+! Decidi quanti set esportare
+NEXP = NSET
+*IF, MAXSET, GT, 0, THEN
+  *IF, NSET, GT, MAXSET, THEN
+    NEXP = MAXSET
+  *ENDIF
+*ENDIF
+
+! ===================== ARRAYS =====================
+*DIM, TIME, ARRAY, NEXP
+
+! DOF order: 1=UX 2=UY 3=UZ 4=ROTX 5=ROTY 6=ROTZ
+! FBG(dof, itime, ifbg)
+*DIM, FBG, ARRAY, 6, NEXP, NFBG
+! ==================================================
+
+! ===================== LOOP SET =====================
+*DO, I, 1, NEXP
+
+  SET,1,I
+  *GET, TIME(I), ACTIVE, 0, SET, TIME
+
+  ! Loop su tutti gli FBG (1..8)
+  *DO, J, 1, NFBG
+    NID = FBG_NODES_ID(J)
+
+    *GET, FBG(1,I,J), NODE, NID, U,   X
+    *GET, FBG(2,I,J), NODE, NID, U,   Y
+    *GET, FBG(3,I,J), NODE, NID, U,   Z
+    *GET, FBG(4,I,J), NODE, NID, ROT, X
+    *GET, FBG(5,I,J), NODE, NID, ROT, Y
+    *GET, FBG(6,I,J), NODE, NID, ROT, Z
+  *ENDDO
+
+*ENDDO
+! ====================================================
+
+! ===================== WRITE CSV =====================
+*CFOPEN, fbg_%TAG(1)%, csv
+
+! Header
+*VWRITE, 'time,fbg,ux,uy,uz,rotx,roty,rotz'
+(A)
+
+*DO, I, 1, NEXP
+  *DO, J, 1, NFBG
+    NID = FBG_NODES_ID(J)
+
+    *VWRITE, TIME(I), J, FBG(1,I,J), FBG(2,I,J), FBG(3,I,J), FBG(4,I,J), FBG(5,I,J), FBG(6,I,J)
+    (E16.9,',',I3,',',E16.9,',',E16.9,',',E16.9,',',E16.9,',',E16.9,',',E16.9)
+  *ENDDO
+*ENDDO
+
+*CFCLOSE
+! =====================================================
+
+
+FINISH

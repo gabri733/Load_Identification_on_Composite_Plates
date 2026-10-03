@@ -1,0 +1,13 @@
+! 6. ANALISI MODALE
+
+/SOLU
+ANTYPE,MODAL        ! Analisi modale
+MODOPT,LANB,ALL,0,300      ! 100 modi, metodo Lanczos      
+LUMPM,ON
+MXPAND,ALL,,,YES
+OUTRES,ALL
+ESEL,ALL
+NSEL,ALL
+SOLVE
+SAVE
+FINISH

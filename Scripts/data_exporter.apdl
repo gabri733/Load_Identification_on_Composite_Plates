@@ -1,0 +1,42 @@
+/POST1
+
+NSTEPS = 75
+
+*DIM,strain,ARRAY,NSTEPS,8
+*DIM,sim_time,ARRAY,NSTEPS,1
+*DIM,angles,ARRAY,8,1
+
+angles(1) = 0
+angles(2) = 90
+angles(3) = 0
+angles(4) = 90
+angles(5) = 45
+angles(6) = 45
+angles(7) = 45
+angles(8) = 45
+
+*DO,n,1,8
+	SET,FIRST
+	node_id = FBG_nodes_id(n)
+	*DO,i,1,NSTEPS
+		*GET,strain_x,NODE,node_id,EPTO,X
+		*GET,strain_y,NODE,node_id,EPTO,Y
+		*GET,strain_xy,NODE,node_id,EPTO,XY
+		
+		*IF,angles(n),EQ,0,THEN
+			strain(i,n) = strain_x
+		*ELSEIF,angles(n),EQ,90,THEN
+			strain(i,n) = strain_y
+		*ELSE
+			strain(i,n) = (strain_x + strain_y)*0.5 + ABS(strain_xy)*0.5
+		*ENDIF			
+		
+		sim_time(i) = DT*(4*i+1)
+		SET,NEXT
+		*ENDDO
+*ENDDO
+
+*CFOPEN,data.csv
+*VWRITE,sim_time(1),strain(1,1),strain(1,2),strain(1,3),strain(1,4),strain(1,5),strain(1,6),strain(1,7),strain(1,8)
+(F,E,E,E,E,E,E,E,E)
+*CFCLOS	

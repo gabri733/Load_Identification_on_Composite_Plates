@@ -1,0 +1,50 @@
+/POST1
+SET,1,1     ! <-- metti qui il modo che ti serve
+
+*SET,NFBG,8
+
+*DIM,PHI_UX,ARRAY,NFBG
+*DIM,PHI_UY,ARRAY,NFBG
+*DIM,PHI_UZ,ARRAY,NFBG
+*DIM,PHI_RX,ARRAY,NFBG
+*DIM,PHI_RY,ARRAY,NFBG
+*DIM,PHI_RZ,ARRAY,NFBG
+
+*DO,I,1,NFBG
+    NID = FBG_NODES_ID(I)
+    *GET,PHI_UX(I),NODE,NID,U,X
+    *GET,PHI_UY(I),NODE,NID,U,Y
+    *GET,PHI_UZ(I),NODE,NID,U,Z
+    *GET,PHI_RX(I),NODE,NID,ROT,X
+    *GET,PHI_RY(I),NODE,NID,ROT,Y
+    *GET,PHI_RZ(I),NODE,NID,ROT,Z
+*ENDDO
+
+! ========================
+! Scrittura CSV (robusta)
+! ========================
+*CFOPEN,phi_mode_fbg,csv
+
+*VWRITE
+NODE,UX,UY,UZ,ROTX,ROTY,ROTZ
+(7A16)
+
+*DO,I,1,NFBG
+
+    ! Copia in scalari (così *VWRITE NON interpreta come array)
+    NID = FBG_NODES_ID(I)
+    UX  = PHI_UX(I)
+    UY  = PHI_UY(I)
+    UZ  = PHI_UZ(I)
+    RX  = PHI_RX(I)
+    RY  = PHI_RY(I)
+    RZ  = PHI_RZ(I)
+
+    *VLEN,1
+    *VWRITE,NID,UX,UY,UZ,RX,RY,RZ
+    (I12,6(',',E20.12))
+
+*ENDDO
+
+*CFCLOSE
+FINISH

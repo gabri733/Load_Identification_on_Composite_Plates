@@ -1,0 +1,66 @@
+!========================
+! 1) Leggo il modo n dal .RST
+!========================
+/POST1
+SET, 1, 1         ! load step 1, substep = nmode (modo n)
+
+! Lista nodi (solo quelli strutturali che vuoi eccitare)
+ASEL,S,AREA,,area_id
+ESLA,S
+NSLA,S
+*GET,NN,NODE,0,COUNT
+
+*DIM,NLIST,ARRAY,NN
+*VGET,NLIST(1),NODE,0,NLIST     ! IDs dei nodi selezionati
+
+! Estraggo la forma modale (spostamenti) per quei nodi
+*DIM,PHI_UX,ARRAY,NN
+*DIM,PHI_UY,ARRAY,NN
+*DIM,PHI_UZ,ARRAY,NN
+*VGET,PHI_UX(1),NODE,NLIST(1),U,X
+*VGET,PHI_UY(1),NODE,NLIST(1),U,Y
+*VGET,PHI_UZ(1),NODE,NLIST(1),U,Z
+
+! Se hai shell/beam con rotazioni:
+*DIM,PHI_RX,ARRAY,NN
+*DIM,PHI_RY,ARRAY,NN
+*DIM,PHI_RZ,ARRAY,NN
+*VGET,PHI_RX(1),NODE,NLIST(1),ROT,X
+*VGET,PHI_RY(1),NODE,NLIST(1),ROT,Y
+*VGET,PHI_RZ(1),NODE,NLIST(1),ROT,Z
+
+FINISH
+
+!========================
+! 2) Transiente libero con IC
+!========================
+/FILNAME,transient_%TAG(1)%,ON
+/SOLU
+ANTYPE,TRANS
+TRNOPT,FULL,,,,,HHT
+TINTP,0.03         ! qui metti i tuoi valori di alpha
+
+! Nessun carico: vibrazione libera
+! Impongo condizioni iniziali: u(0)=A*phi, u'(0)=0   
+Aamp = 1
+*DO,i,1,NN
+  nid = NLIST(i)
+
+  IC,nid,UX, Aamp*PHI_UX(i)
+  IC,nid,UY, Aamp*PHI_UY(i)
+  IC,nid,UZ, Aamp*PHI_UZ(i)
+
+
+  ! rotazioni (se presenti)
+  IC,nid,ROTX, Aamp*PHI_RX(i)
+  IC,nid,ROTY, Aamp*PHI_RY(i)
+  IC,nid,ROTZ, Aamp*PHI_RZ(i)
+
+*ENDDO
+ALLSEL,ALL,ALL
+TIME, 0
+DELTIM,0.0005
+OUTRES,ALL,ALL
+TIME,0.12
+SOLVE
+FINISH

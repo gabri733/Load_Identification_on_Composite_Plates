@@ -1,0 +1,131 @@
+# Claude Code IDE
+.claude/
+
+# ANSYS Workbench & Temporary Files
+*.db
+*.dbb
+*.rdb
+*.rst
+*.r001
+*.full
+*.esav
+*.ldhi
+*.DSP
+*.mntr
+*.avi
+*.stat
+*.anf
+*.ans_log
+*.para_log
+*.err
+*.log
+*.lock
+*.tmp
+*.dmp
+menust.tmp
+temp.*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Text Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+*.DS_Store
+Thumbs.db
+*.lnk
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+.cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Spyder IDE
+.spyderproject
+.spyproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Node modules (if used)
+node_modules/
+
+# Archive/Backup files (except Archive/ folder)
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.bak
+*.backup
+*.swp
+
+# IDE workspace files
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.directory
+
+# OneDrive sync issues
+*.~
+*_ShellExperienceHost

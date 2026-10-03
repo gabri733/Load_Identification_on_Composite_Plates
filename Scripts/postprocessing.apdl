@@ -1,0 +1,16 @@
+/POST1
+LAYER,1
+SHELL,TOP
+SET,1
+*DIM,strain_array,ARRAY,8,3
+
+*DO,i,1,8,
+    ID = FBG_nodes_id(i)
+    *GET,epsx,NODE,ID,EPEL,X
+    *GET,epsy,NODE,ID,EPEL,Y
+    *GET,epsxy,NODE,ID,EPEL,XY
+    strain_array(i,1) = epsx
+    strain_array(i,2) = epsy
+    strain_array(i,3) = epsxy
+*ENDDO
+

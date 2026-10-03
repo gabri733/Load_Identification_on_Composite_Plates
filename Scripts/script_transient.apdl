@@ -1,0 +1,51 @@
+/PREP7
+R_MIN = 2
+P_MAX = 15000
+omega_p = 3.1416/0.1
+
+/SOLU
+ANTYPE,TRANS
+TRNOPT,FULL,,,,,HHT
+TINTP,0.05
+TIME_TOT = 0.15
+DT = 0.0005
+OUTRES,FBG_ELEMS,ALL
+OUTRES,ALL
+NSTEPS = NINT(TIME_TOT/DT)
+
+*DO,ISTEP,1,NSTEPS
+	TCURR = ISTEP*DT
+	TIME,TCURR
+	ESEL,S,CENT,Z,z_massima,z_massima
+	*GET,nelem,elem,0,COUNT
+	*IF,TCURR,LE,0.1,THEN	
+		*DO,j,1,nelem
+			*GET,elem_id,elem,0,NUM,MIN
+        	*GET,x_elem,elem,elem_id,CENT,X
+            *GET,y_elem,elem,elem_id,CENT,Y
+            R = SQRT((x_elem - X_S-u_s*TCURR)**2 + (y_elem - Y_S-v_s*TCURR)**2 + R_MIN**2)
+			temp1 = R_MIN/R 
+			temp2 = OMEGA_p*TCURR
+            PVAL = P_MAX*temp1*SIN(temp2)**2
+            SFE,elem_id,1,PRES,0,-PVAL
+            ESEL,U,ELEM,,elem_id
+		*ENDDO
+	*ELSE
+		SFE,ALL,1,PRES,0,0
+	*ENDIF
+	ALLSEL,ALL
+	SOLVE
+	iter = MOD ( ISTEP,4 )
+	*IF,iter,EQ,0,THEN
+		OUTRES,ALL
+		OUTRES,ESOL,,fbg_elems
+		OUTRES,STRS
+	*ELSE
+		OUTRES,,NONE
+	*ENDIF
+*ENDDO	
+
+FINISH
+
+
+
